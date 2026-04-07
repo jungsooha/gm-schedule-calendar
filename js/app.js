@@ -1,30 +1,43 @@
-// 색상 팔레트
-const COLORS = ['#667eea', '#dc3545', '#28a745', '#ffc107', '#9b59b6', '#17a2b8'];
+// 상수
+const TEAM_COLORS = {
+    '김팀장': '#FF6B6B',
+    '이사원': '#4ECDC4',
+    '박사원': '#45B7D1',
+    '최사원': '#FFA07A',
+    '정사원': '#98D8C8',
+    '윤사원': '#F7DC6F'
+};
+
+const DEFAULT_TEAMS = ['김팀장', '이사원', '박사원', '최사원', '정사원', '윤사원'];
 
 // 전역 변수
 let teamMembers = [];
 let schedules = [];
-let currentWeekStart = new Date(2026, 3, 6); // 2026년 4월 6일 월요일
-let currentModalSchedule = null;
+let currentWeekStart = new Date(2026, 3, 6); // 2026년 4월 6일 (월요일)
+let currentSchedule = null;
 
 // 초기화
 function init() {
-    loadDataFromStorage();
+    loadFromStorage();
+    
+    // 기본 팀원 설정
     if (teamMembers.length === 0) {
-        // 기본 팀원 6명 추가
-        const defaultMembers = ['김팀장', '이사원', '박사원', '최사원', '정사원', '윤사원'];
-        defaultMembers.forEach(name => {
-            teamMembers.push({
-                id: Date.now() + Math.random(),
-                name: name,
-                color: COLORS[teamMembers.length]
-            });
-        });
-        saveDataToStorage();
+        teamMembers = DEFAULT_TEAMS.map(name => ({
+            id: Date.now() + Math.random(),
+            name: name
+        }));
+        saveToStorage();
     }
-    updateTeamList();
+    
+    // 오늘 날짜 설정
+    const today = new Date(2026, 3, 7); // 2026년 4월 7일
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    document.getElementById('scheduleDate').value = `${year}-${month}-${day}`;
+    
+    renderTeamList();
     updateTeamSelect();
-    setTodayDate();
     renderCalendar();
 }
 
@@ -32,197 +45,171 @@ function init() {
 function addTeamMember() {
     const input = document.getElementById('teamMemberInput');
     const name = input.value.trim();
-
+    
     if (!name) {
-        alert('팀원 이름을 입력해주세요.');
+        alert('팀원 이름을 입력하세요');
         return;
     }
-
-    if (teamMembers.length >= 6) {
-        alert('최대 6명까지만 추가할 수 있습니다.');
+    
+    if (teamMembers.length >= 10) {
+        alert('최대 10명까지만 추가 가능합니다');
         return;
     }
-
-    const newMember = {
+    
+    teamMembers.push({
         id: Date.now(),
-        name: name,
-        color: COLORS[teamMembers.length % COLORS.length]
-    };
-
-    teamMembers.push(newMember);
-    saveDataToStorage();
+        name: name
+    });
+    
+    saveToStorage();
     input.value = '';
-    updateTeamList();
+    renderTeamList();
     updateTeamSelect();
 }
 
 // 팀원 삭제
 function deleteTeamMember(id) {
-    if (confirm('정말 이 팀원을 삭제하시겠습니까?')) {
-        teamMembers = teamMembers.filter(m => m.id !== id);
-        schedules = schedules.filter(s => s.teamMemberId !== id);
-        saveDataToStorage();
-        updateTeamList();
+    if (confirm('정말 삭제하시겠습니까?')) {
+        teamMembers = teamMembers.filter(t => t.id !== id);
+        schedules = schedules.filter(s => s.teamId !== id);
+        saveToStorage();
+        renderTeamList();
         updateTeamSelect();
         renderCalendar();
     }
 }
 
-// 팀원 목록 업데이트
-function updateTeamList() {
-    const teamList = document.getElementById('teamList');
-    teamList.innerHTML = '';
-
-    teamMembers.forEach(member => {
+// 팀원 목록 렌더링
+function renderTeamList() {
+    const list = document.getElementById('teamList');
+    list.innerHTML = '';
+    
+    teamMembers.forEach(team => {
+        const color = TEAM_COLORS[team.name] || '#999';
         const div = document.createElement('div');
         div.className = 'team-member';
+        div.style.borderLeftColor = color;
+        
         div.innerHTML = `
             <div style="display: flex; align-items: center; flex: 1;">
-                <div class="team-member-color" style="background-color: ${member.color}"></div>
-                <span class="team-member-name">${member.name}</span>
+                <div class="team-member-color" style="background-color: ${color}"></div>
+                <span class="team-member-name">${team.name}</span>
             </div>
-            <button class="team-member-delete" onclick="deleteTeamMember(${member.id})">삭제</button>
+            <button class="team-member-delete" onclick="deleteTeamMember(${team.id})">삭제</button>
         `;
-        teamList.appendChild(div);
+        
+        list.appendChild(div);
     });
 }
 
-// 팀원 선택 드롭다운 업데이트
+// 팀원 선택 업데이트
 function updateTeamSelect() {
     const select = document.getElementById('teamSelect');
     select.innerHTML = '<option value="">-- 팀원을 선택하세요 --</option>';
-
-    teamMembers.forEach(member => {
+    
+    teamMembers.forEach(team => {
         const option = document.createElement('option');
-        option.value = member.id;
-        option.textContent = member.name;
+        option.value = team.id;
+        option.textContent = team.name;
         select.appendChild(option);
     });
 }
 
-// 오늘 날짜 설정
-function setTodayDate() {
-    const today = new Date(2026, 3, 7); // 2026년 4월 7일
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const date = String(today.getDate()).padStart(2, '0');
-    document.getElementById('scheduleDate').value = `${year}-${month}-${date}`;
-}
-
 // 일정 추가
 function addSchedule() {
-    const teamMemberId = document.getElementById('teamSelect').value;
-    const scheduleDate = document.getElementById('scheduleDate').value;
-    const scheduleTitle = document.getElementById('scheduleTitle').value.trim();
-    const scheduleDescription = document.getElementById('scheduleDescription').value.trim();
-
-    if (!teamMemberId) {
-        alert('팀원을 선택해주세요.');
+    const teamId = parseInt(document.getElementById('teamSelect').value);
+    const date = document.getElementById('scheduleDate').value;
+    const title = document.getElementById('scheduleTitle').value.trim();
+    const description = document.getElementById('scheduleDescription').value.trim();
+    
+    if (!teamId) {
+        alert('팀원을 선택하세요');
         return;
     }
-
-    if (!scheduleDate) {
-        alert('날짜를 선택해주세요.');
+    
+    if (!date) {
+        alert('날짜를 선택하세요');
         return;
     }
-
-    if (!scheduleTitle) {
-        alert('일정을 입력해주세요.');
+    
+    if (!title) {
+        alert('일정을 입력하세요');
         return;
     }
-
-    const newSchedule = {
+    
+    const team = teamMembers.find(t => t.id === teamId);
+    
+    schedules.push({
         id: Date.now(),
-        teamMemberId: parseInt(teamMemberId),
-        date: scheduleDate,
-        title: scheduleTitle,
-        description: scheduleDescription
-    };
-
-    schedules.push(newSchedule);
-    saveDataToStorage();
-
+        teamId: teamId,
+        teamName: team.name,
+        date: date,
+        title: title,
+        description: description
+    });
+    
+    saveToStorage();
+    
     // 폼 초기화
     document.getElementById('teamSelect').value = '';
     document.getElementById('scheduleTitle').value = '';
     document.getElementById('scheduleDescription').value = '';
-    setTodayDate();
-
-    alert('일정이 추가되었습니다.');
+    
+    const today = new Date(2026, 3, 7);
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    document.getElementById('scheduleDate').value = `${year}-${month}-${day}`;
+    
     renderCalendar();
 }
 
 // 일정 삭제
-function deleteSchedule(id) {
-    schedules = schedules.filter(s => s.id !== id);
-    saveDataToStorage();
-    closeModal();
-    renderCalendar();
-}
-
-// 현재 모달의 일정 삭제
 function deleteCurrentSchedule() {
-    if (currentModalSchedule) {
-        if (confirm('이 일정을 삭제하시겠습니까?')) {
-            deleteSchedule(currentModalSchedule.id);
-        }
+    if (currentSchedule && confirm('정말 삭제하시겠습니까?')) {
+        schedules = schedules.filter(s => s.id !== currentSchedule.id);
+        saveToStorage();
+        closeModal();
+        renderCalendar();
     }
 }
 
 // 모달 열기
-function openModal(schedule) {
-    const member = teamMembers.find(m => m.id === schedule.teamMemberId);
-    currentModalSchedule = schedule;
-
-    document.getElementById('modalTitle').textContent = `[${member.name}] ${schedule.title}`;
-    document.getElementById('modalTeam').textContent = member.name;
-    document.getElementById('modalDate').textContent = formatDate(schedule.date);
+function showScheduleDetail(id) {
+    const schedule = schedules.find(s => s.id === id);
+    if (!schedule) return;
+    
+    currentSchedule = schedule;
+    
+    document.getElementById('modalTitle').textContent = schedule.title;
+    document.getElementById('modalTeam').textContent = schedule.teamName;
+    document.getElementById('modalDate').textContent = schedule.date;
     document.getElementById('modalSchedule').textContent = schedule.title;
     document.getElementById('modalDescription').textContent = schedule.description || '없음';
-
-    document.getElementById('scheduleModal').style.display = 'block';
+    
+    const modal = document.getElementById('scheduleModal');
+    modal.style.display = 'block';
 }
 
 // 모달 닫기
 function closeModal() {
     document.getElementById('scheduleModal').style.display = 'none';
-    currentModalSchedule = null;
+    currentSchedule = null;
 }
 
-// 날짜 포맷팅
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
-    return `${year}년 ${month}월 ${day}일 (${weekday})`;
-}
-
-// 주간 시작 날짜 계산
-function getWeekStart(date) {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day;
-    return new Date(d.setDate(diff));
-}
-
-// 이전주
+// 주간 네비게이션
 function previousWeek() {
     currentWeekStart = new Date(currentWeekStart.getTime() - 7 * 24 * 60 * 60 * 1000);
     renderCalendar();
 }
 
-// 다음주
 function nextWeek() {
     currentWeekStart = new Date(currentWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
     renderCalendar();
 }
 
-// 오늘로 이동
 function goToToday() {
-    const today = new Date(2026, 3, 7); // 2026년 4월 7일
-    currentWeekStart = getWeekStart(today);
+    currentWeekStart = new Date(2026, 3, 6); // 2026년 4월 6일 (이 주의 월요일)
     renderCalendar();
 }
 
@@ -230,79 +217,83 @@ function goToToday() {
 function renderCalendar() {
     const calendar = document.getElementById('calendar');
     calendar.innerHTML = '';
-
-    // 주간 제목 업데이트
-    const weekEnd = new Date(currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
-    const monthStart = currentWeekStart.getMonth() + 1;
-    const monthEnd = weekEnd.getMonth() + 1;
-    const yearStart = currentWeekStart.getFullYear();
-    const weekNum = Math.ceil((currentWeekStart.getDate() + new Date(yearStart, monthStart - 1, 1).getDay()) / 7);
     
-    if (monthStart === monthEnd) {
-        document.getElementById('weekTitle').textContent = `${yearStart}년 ${monthStart}월 ${weekNum}주`;
-    } else {
-        document.getElementById('weekTitle').textContent = `${yearStart}년 ${monthStart}월-${monthEnd}월`;
-    }
-
-    // 7일 렌더링 (월~일)
+    // 주간 시작 (월요일로 설정)
+    const weekStart = new Date(currentWeekStart);
+    const dayOfWeek = weekStart.getDay();
+    const diff = weekStart.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    weekStart.setDate(diff);
+    
+    // 주간 제목
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    const year = weekStart.getFullYear();
+    const month = weekStart.getMonth() + 1;
+    const weekNum = Math.ceil((weekStart.getDate() + new Date(year, month - 1, 1).getDay()) / 7);
+    
+    document.getElementById('weekTitle').textContent = `${year}년 ${month}월 ${weekNum}주 (${weekStart.getDate()}~${weekEnd.getDate()}일)`;
+    
+    // 요일 이름
+    const dayNames = ['월', '화', '수', '목', '금', '토', '일'];
+    const today = new Date(2026, 3, 7);
+    
+    // 7일 렌더링
     for (let i = 0; i < 7; i++) {
-        const date = new Date(currentWeekStart.getTime() + i * 24 * 60 * 60 * 1000);
-        const dateString = date.toISOString().split('T')[0];
+        const date = new Date(weekStart);
+        date.setDate(date.getDate() + i);
         
-        const dayDiv = document.createElement('div');
-        dayDiv.className = 'calendar-day';
-
-        // 오늘인지 확인
-        const today = new Date(2026, 3, 7);
-        const isToday = dateString === today.toISOString().split('T')[0];
-        if (isToday) {
-            dayDiv.classList.add('today');
-        }
-
-        // 요일 헤더
-        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-        const dayHeader = document.createElement('div');
-        dayHeader.className = 'day-header';
-        dayHeader.innerHTML = `<div class="day-weekday">${weekdays[date.getDay()]}</div><div class="day-date">${date.getDate()}</div>`;
-        dayDiv.appendChild(dayHeader);
-
-        // 이 날짜의 일정들
-        const daySchedules = schedules.filter(s => s.date === dateString);
+        const dateStr = date.toISOString().split('T')[0];
+        const isToday = dateStr === today.toISOString().split('T')[0];
+        
+        // 날짜 셀
+        const cell = document.createElement('div');
+        cell.className = 'day-cell';
+        if (isToday) cell.classList.add('today');
+        
+        // 헤더 (요일, 날짜)
+        const header = document.createElement('div');
+        header.className = 'day-header';
+        header.innerHTML = `
+            <span class="day-weekday">${dayNames[i]}</span>
+            <span class="day-date">${date.getDate()}</span>
+        `;
+        cell.appendChild(header);
+        
+        // 일정들
+        const schedulesDiv = document.createElement('div');
+        schedulesDiv.className = 'day-schedules';
+        
+        const daySchedules = schedules.filter(s => s.date === dateStr);
         daySchedules.forEach(schedule => {
-            const member = teamMembers.find(m => m.id === schedule.teamMemberId);
-            const scheduleDiv = document.createElement('div');
-            scheduleDiv.className = `schedule-item color-${COLORS.indexOf(member.color)}`;
-            scheduleDiv.style.borderLeftColor = member.color;
-            scheduleDiv.textContent = `${member.name}: ${schedule.title}`;
-            scheduleDiv.onclick = () => openModal(schedule);
-            dayDiv.appendChild(scheduleDiv);
+            const color = TEAM_COLORS[schedule.teamName] || '#999';
+            const item = document.createElement('div');
+            item.className = 'schedule-item';
+            item.style.backgroundColor = color;
+            item.textContent = `${schedule.teamName}: ${schedule.title}`;
+            item.onclick = () => showScheduleDetail(schedule.id);
+            schedulesDiv.appendChild(item);
         });
-
-        calendar.appendChild(dayDiv);
+        
+        cell.appendChild(schedulesDiv);
+        calendar.appendChild(cell);
     }
 }
 
-// 로컬 스토리지 저장
-function saveDataToStorage() {
+// 저장/로드
+function saveToStorage() {
     localStorage.setItem('gm-team-members', JSON.stringify(teamMembers));
     localStorage.setItem('gm-schedules', JSON.stringify(schedules));
 }
 
-// 로컬 스토리지 로드
-function loadDataFromStorage() {
-    const savedMembers = localStorage.getItem('gm-team-members');
-    const savedSchedules = localStorage.getItem('gm-schedules');
-
-    if (savedMembers) {
-        teamMembers = JSON.parse(savedMembers);
-    }
-
-    if (savedSchedules) {
-        schedules = JSON.parse(savedSchedules);
-    }
+function loadFromStorage() {
+    const teams = localStorage.getItem('gm-team-members');
+    const scheds = localStorage.getItem('gm-schedules');
+    
+    if (teams) teamMembers = JSON.parse(teams);
+    if (scheds) schedules = JSON.parse(scheds);
 }
 
-// 모달 외부 클릭시 닫기
+// 모달 외부 클릭 닫기
 window.onclick = function(event) {
     const modal = document.getElementById('scheduleModal');
     if (event.target === modal) {
@@ -310,19 +301,5 @@ window.onclick = function(event) {
     }
 };
 
-// Enter 키로 팀원 추가
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('teamMemberInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            addTeamMember();
-        }
-    });
-
-    document.getElementById('scheduleTitle').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            addSchedule();
-        }
-    });
-
-    init();
-});
+// 페이지 로드
+document.addEventListener('DOMContentLoaded', init);
