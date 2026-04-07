@@ -16,6 +16,14 @@ let schedules = [];
 let currentWeekStart = new Date(2026, 3, 6); // 2026년 4월 6일 (월요일)
 let currentSchedule = null;
 
+// 날짜를 YYYY-MM-DD 형식으로 변환 (타임존 무시)
+function formatDateString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 // 초기화
 function init() {
     loadFromStorage();
@@ -29,12 +37,9 @@ function init() {
         saveToStorage();
     }
     
-    // 오늘 날짜 설정
-    const today = new Date(2026, 3, 7); // 2026년 4월 7일
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    document.getElementById('scheduleDate').value = `${year}-${month}-${day}`;
+    // 오늘 날짜 설정 (2026년 4월 7일)
+    const today = new Date(2026, 3, 7);
+    document.getElementById('scheduleDate').value = formatDateString(today);
     
     renderTeamList();
     updateTeamSelect();
@@ -156,11 +161,9 @@ function addSchedule() {
     document.getElementById('scheduleDescription').value = '';
     
     const today = new Date(2026, 3, 7);
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    document.getElementById('scheduleDate').value = `${year}-${month}-${day}`;
+    document.getElementById('scheduleDate').value = formatDateString(today);
     
+    alert('일정이 추가되었습니다!');
     renderCalendar();
 }
 
@@ -171,6 +174,7 @@ function deleteCurrentSchedule() {
         saveToStorage();
         closeModal();
         renderCalendar();
+        alert('일정이 삭제되었습니다!');
     }
 }
 
@@ -181,7 +185,7 @@ function showScheduleDetail(id) {
     
     currentSchedule = schedule;
     
-    document.getElementById('modalTitle').textContent = schedule.title;
+    document.getElementById('modalTitle').textContent = `[${schedule.teamName}] ${schedule.title}`;
     document.getElementById('modalTeam').textContent = schedule.teamName;
     document.getElementById('modalDate').textContent = schedule.date;
     document.getElementById('modalSchedule').textContent = schedule.title;
@@ -231,23 +235,24 @@ function renderCalendar() {
     const month = weekStart.getMonth() + 1;
     const weekNum = Math.ceil((weekStart.getDate() + new Date(year, month - 1, 1).getDay()) / 7);
     
-    document.getElementById('weekTitle').textContent = `${year}년 ${month}월 ${weekNum}주 (${weekStart.getDate()}~${weekEnd.getDate()}일)`;
+    document.getElementById('weekTitle').textContent = `${year}년 ${month}월 ${weekNum}주`;
     
     // 요일 이름
     const dayNames = ['월', '화', '수', '목', '금', '토', '일'];
     const today = new Date(2026, 3, 7);
+    const todayStr = formatDateString(today);
     
     // 7일 렌더링
     for (let i = 0; i < 7; i++) {
         const date = new Date(weekStart);
         date.setDate(date.getDate() + i);
         
-        const dateStr = date.toISOString().split('T')[0];
-        const isToday = dateStr === today.toISOString().split('T')[0];
+        const dateStr = formatDateString(date);
+        const isToday = dateStr === todayStr;
         
         // 날짜 셀
         const cell = document.createElement('div');
-        cell.className = 'day-cell';
+        cell.className = 'calendar-day';
         if (isToday) cell.classList.add('today');
         
         // 헤더 (요일, 날짜)
@@ -260,21 +265,21 @@ function renderCalendar() {
         cell.appendChild(header);
         
         // 일정들
-        const schedulesDiv = document.createElement('div');
-        schedulesDiv.className = 'day-schedules';
-        
         const daySchedules = schedules.filter(s => s.date === dateStr);
         daySchedules.forEach(schedule => {
             const color = TEAM_COLORS[schedule.teamName] || '#999';
             const item = document.createElement('div');
             item.className = 'schedule-item';
             item.style.backgroundColor = color;
-            item.textContent = `${schedule.teamName}: ${schedule.title}`;
+            item.style.color = 'white';
+            item.innerHTML = `
+                <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 3px; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">${schedule.teamName}</div>
+                <div style="font-size: 0.9em; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">${schedule.title}</div>
+            `;
             item.onclick = () => showScheduleDetail(schedule.id);
-            schedulesDiv.appendChild(item);
+            cell.appendChild(item);
         });
         
-        cell.appendChild(schedulesDiv);
         calendar.appendChild(cell);
     }
 }
