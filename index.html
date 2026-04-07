@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>구매관재팀 캘린더</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📅 구매관재팀 일정 캘린더</h1>
+            <p>팀원들의 일정을 한눈에 확인하세요</p>
+        </header>
+
+        <div class="main-content">
+            <!-- 좌측 패널: 팀원 관리 및 일정 추가 -->
+            <aside class="sidebar">
+                <!-- 팀원 관리 섹션 -->
+                <section class="team-section">
+                    <h2>👥 팀원 관리</h2>
+                    <div class="team-input-group">
+                        <input type="text" id="teamMemberInput" placeholder="팀원 이름 입력" class="input-field">
+                        <button onclick="addTeamMember()" class="btn btn-primary">추가</button>
+                    </div>
+                    <div id="teamList" class="team-list">
+                        <!-- 팀원 목록이 여기 표시됨 -->
+                    </div>
+                </section>
+
+                <!-- 일정 추가 섹션 -->
+                <section class="schedule-section">
+                    <h2>➕ 일정 추가</h2>
+                    <div class="form-group">
+                        <label for="teamSelect">팀원 선택:</label>
+                        <select id="teamSelect" class="input-field">
+                            <option value="">-- 팀원을 선택하세요 --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduleDate">날짜:</label>
+                        <input type="date" id="scheduleDate" class="input-field">
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduleTitle">일정:</label>
+                        <input type="text" id="scheduleTitle" placeholder="일정 입력" class="input-field">
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduleDescription">상세 내용:</label>
+                        <textarea id="scheduleDescription" placeholder="상세 내용 (선택사항)" class="input-field" rows="3"></textarea>
+                    </div>
+                    <button onclick="addSchedule()" class="btn btn-primary btn-block">일정 추가</button>
+                </section>
+
+                <!-- 주간 네비게이션 -->
+                <section class="navigation-section">
+                    <h2>📆 주간 이동</h2>
+                    <div class="nav-buttons">
+                        <button onclick="previousWeek()" class="btn btn-secondary">← 이전주</button>
+                        <button onclick="goToToday()" class="btn btn-secondary">오늘</button>
+                        <button onclick="nextWeek()" class="btn btn-secondary">다음주 →</button>
+                    </div>
+                </section>
+            </aside>
+
+            <!-- 우측 패널: 주간 캘린더 -->
+            <main class="calendar-section">
+                <div class="calendar-container">
+                    <h2 id="weekTitle">2026년 4월 6주</h2>
+                    <div id="calendar" class="calendar-grid">
+                        <!-- 주간 캘린더가 여기 표시됨 -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- 모달: 일정 상세 정보 -->
+    <div id="scheduleModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <p><strong>팀원:</strong> <span id="modalTeam"></span></p>
+            <p><strong>날짜:</strong> <span id="modalDate"></span></p>
+            <p><strong>일정:</strong> <span id="modalSchedule"></span></p>
+            <p><strong>상세 내용:</strong> <span id="modalDescription"></span></p>
+            <button onclick="deleteCurrentSchedule()" class="btn btn-danger btn-block">일정 삭제</button>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
