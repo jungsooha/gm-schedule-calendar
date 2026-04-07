@@ -5,7 +5,9 @@ const TEAM_COLORS = {
     '박사원': '#45B7D1',
     '최사원': '#FFA07A',
     '정사원': '#98D8C8',
-    '윤사원': '#F7DC6F'
+    '윤사원': '#F7DC6F',
+    '설희진': '#B19CD9',
+    '기미서': '#FFB347'
 };
 
 const DEFAULT_TEAMS = ['김팀장', '이사원', '박사원', '최사원', '정사원', '윤사원'];
@@ -13,6 +15,7 @@ const DEFAULT_TEAMS = ['김팀장', '이사원', '박사원', '최사원', '정�
 // 전역 변수
 let teamMembers = [];
 let schedules = [];
+let lunchUnavailable = {}; // {teamId: {YYYY-MM-DD: true}}
 let currentWeekStart = new Date(2026, 3, 6); // 2026년 4월 6일 (월요일)
 let currentSchedule = null;
 
@@ -44,6 +47,7 @@ function init() {
     renderTeamList();
     updateTeamSelect();
     renderCalendar();
+    renderLunchCheckboxes();
 }
 
 // 팀원 추가
@@ -70,6 +74,7 @@ function addTeamMember() {
     input.value = '';
     renderTeamList();
     updateTeamSelect();
+    renderLunchCheckboxes();
 }
 
 // 팀원 삭제
@@ -77,10 +82,12 @@ function deleteTeamMember(id) {
     if (confirm('정말 삭제하시겠습니까?')) {
         teamMembers = teamMembers.filter(t => t.id !== id);
         schedules = schedules.filter(s => s.teamId !== id);
+        delete lunchUnavailable[id];
         saveToStorage();
         renderTeamList();
         updateTeamSelect();
         renderCalendar();
+        renderLunchCheckboxes();
     }
 }
 
@@ -90,7 +97,7 @@ function renderTeamList() {
     list.innerHTML = '';
     
     teamMembers.forEach(team => {
-        const color = TEAM_COLORS[team.name] || '#999';
+        const color = TEAM_COLORS[team.name] || '#999999';
         const div = document.createElement('div');
         div.className = 'team-member';
         div.style.borderLeftColor = color;
@@ -118,6 +125,72 @@ function updateTeamSelect() {
         option.textContent = team.name;
         select.appendChild(option);
     });
+}
+
+// 점심 약속 체크박스 렌더링
+function renderLunchCheckboxes() {
+    const container = document.getElementById('lunchCheckboxes');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    const today = new Date(2026, 3, 7);
+    const todayStr = formatDateString(today);
+    
+    teamMembers.forEach(team => {
+        const color = TEAM_COLORS[team.name] || '#999999';
+        const isUnavailable = lunchUnavailable[team.id]?.[todayStr] || false;
+        
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.alignItems = 'center';
+        div.style.gap = '8px';
+        div.style.marginBottom = '10px';
+        div.style.padding = '10px';
+        div.style.backgroundColor = '#f9f9f9';
+        div.style.borderRadius = '6px';
+        div.style.borderLeft = `4px solid ${color}`;
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `lunch-${team.id}`;
+        checkbox.checked = isUnavailable;
+        checkbox.style.cursor = 'pointer';
+        checkbox.style.width = '18px';
+        checkbox.style.height = '18px';
+        
+        checkbox.addEventListener('change', (e) => {
+            toggleLunchUnavailable(team.id, todayStr, e.target.checked);
+        });
+        
+        const label = document.createElement('label');
+        label.htmlFor = `lunch-${team.id}`;
+        label.textContent = `${team.name} - 점심 불가`;
+        label.style.cursor = 'pointer';
+        label.style.margin = '0';
+        label.style.fontWeight = '500';
+        label.style.flex = '1';
+        
+        div.appendChild(checkbox);
+        div.appendChild(label);
+        container.appendChild(div);
+    });
+}
+
+// 점심 불가 토글
+function toggleLunchUnavailable(teamId, date, unavailable) {
+    if (!lunchUnavailable[teamId]) {
+        lunchUnavailable[teamId] = {};
+    }
+    
+    if (unavailable) {
+        lunchUnavailable[teamId][date] = true;
+    } else {
+        delete lunchUnavailable[teamId][date];
+    }
+    
+    saveToStorage();
+    renderCalendar();
 }
 
 // 일정 추가
@@ -205,16 +278,19 @@ function closeModal() {
 function previousWeek() {
     currentWeekStart = new Date(currentWeekStart.getTime() - 7 * 24 * 60 * 60 * 1000);
     renderCalendar();
+    renderLunchCheckboxes();
 }
 
 function nextWeek() {
     currentWeekStart = new Date(currentWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
     renderCalendar();
+    renderLunchCheckboxes();
 }
 
 function goToToday() {
     currentWeekStart = new Date(2026, 3, 6); // 2026년 4월 6일 (이 주의 월요일)
     renderCalendar();
+    renderLunchCheckboxes();
 }
 
 // 캘린더 렌더링
@@ -229,8 +305,6 @@ function renderCalendar() {
     weekStart.setDate(diff);
     
     // 주간 제목
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 6);
     const year = weekStart.getFullYear();
     const month = weekStart.getMonth() + 1;
     const weekNum = Math.ceil((weekStart.getDate() + new Date(year, month - 1, 1).getDay()) / 7);
@@ -267,7 +341,7 @@ function renderCalendar() {
         // 일정들
         const daySchedules = schedules.filter(s => s.date === dateStr);
         daySchedules.forEach(schedule => {
-            const color = TEAM_COLORS[schedule.teamName] || '#999';
+            const color = TEAM_COLORS[schedule.teamName] || '#999999';
             const item = document.createElement('div');
             item.className = 'schedule-item';
             item.style.backgroundColor = color;
@@ -280,6 +354,28 @@ function renderCalendar() {
             cell.appendChild(item);
         });
         
+        // 점심 불가 표시
+        const unavailableLunches = [];
+        teamMembers.forEach(team => {
+            if (lunchUnavailable[team.id]?.[dateStr]) {
+                unavailableLunches.push(team.name);
+            }
+        });
+        
+        if (unavailableLunches.length > 0) {
+            const lunchItem = document.createElement('div');
+            lunchItem.style.padding = '8px 10px';
+            lunchItem.style.backgroundColor = '#FFE4E1';
+            lunchItem.style.borderRadius = '6px';
+            lunchItem.style.fontSize = '0.8em';
+            lunchItem.style.color = '#C41E3A';
+            lunchItem.style.fontWeight = '600';
+            lunchItem.style.marginTop = '4px';
+            lunchItem.style.textShadow = '0 1px 2px rgba(255,255,255,0.3)';
+            lunchItem.innerHTML = `🍽️ 점심불가: ${unavailableLunches.join(', ')}`;
+            cell.appendChild(lunchItem);
+        }
+        
         calendar.appendChild(cell);
     }
 }
@@ -288,14 +384,17 @@ function renderCalendar() {
 function saveToStorage() {
     localStorage.setItem('gm-team-members', JSON.stringify(teamMembers));
     localStorage.setItem('gm-schedules', JSON.stringify(schedules));
+    localStorage.setItem('gm-lunch-unavailable', JSON.stringify(lunchUnavailable));
 }
 
 function loadFromStorage() {
     const teams = localStorage.getItem('gm-team-members');
     const scheds = localStorage.getItem('gm-schedules');
+    const lunch = localStorage.getItem('gm-lunch-unavailable');
     
     if (teams) teamMembers = JSON.parse(teams);
     if (scheds) schedules = JSON.parse(scheds);
+    if (lunch) lunchUnavailable = JSON.parse(lunch);
 }
 
 // 모달 외부 클릭 닫기
