@@ -1,0 +1,100 @@
+import type { Config } from 'tailwindcss';
+
+const config: Config = {
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        muted: {
+          50: '#F9F8F6',
+          100: '#F3F1ED',
+          200: '#E8E5DF',
+          300: '#DDD9D1',
+          400: '#C9C3B8',
+          500: '#B5AE9F',
+          600: '#A1998A',
+          700: '#8D8575',
+          800: '#79705A',
+          900: '#65683F',
+        },
+        sage: {
+          50: '#F6F9F5',
+          100: '#E8F1E5',
+          200: '#D1E3CB',
+          300: '#BAD5B1',
+          400: '#A3C797',
+          500: '#8CB97D',
+          600: '#75AB63',
+          700: '#5E9D4A',
+          800: '#478F31',
+          900: '#308118',
+        },
+        rose: {
+          50: '#FDF7F6',
+          100: '#F9EDED',
+          200: '#F3DDDB',
+          300: '#EDCDC9',
+          400: '#E7BDB7',
+          500: '#E1ADA5',
+          600: '#DB9D93',
+          700: '#D58D81',
+          800: '#CF7D6F',
+          900: '#C96D5D',
+        },
+        slate: {
+          50: '#F8F9FA',
+          100: '#F0F1F3',
+          200: '#E0E3E8',
+          300: '#D0D5DD',
+          400: '#A9B1C2',
+          500: '#828DAB',
+          600: '#5B6894',
+          700: '#34457D',
+          800: '#1F2A4D',
+          900: '#0A0F1D',
+        },
+        amber: {
+          50: '#FFFBF0',
+          100: '#FEF3E2',
+          200: '#FDE8CB',
+          300: '#FCDDB4',
+          400: '#FBD291',
+          500: '#FAC770',
+          600: '#F9BC4F',
+          700: '#F8B12E',
+          800: '#E6A01F',
+          900: '#D48F10',
+        },
+        cyan: {
+          50: '#F0FAFB',
+          100: '#E1F5F7',
+          200: '#B2EBF2',
+          300: '#80DEEA',
+          400: '#4DD0E1',
+          500: '#26C6DA',
+          600: '#00BCD4',
+          700: '#0097A7',
+          800: '#00838F',
+          900: '#006064',
+        },
+      },
+      fontFamily: {
+        sans: ['ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
+      spacing: {
+        gutter: '1.5rem',
+      },
+      borderRadius: {
+        lg: '0.5rem',
+        xl: '0.75rem',
+      },
+    },
+  },
+  plugins: [],
+};
+
+export default config;
